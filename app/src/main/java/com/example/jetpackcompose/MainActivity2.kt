@@ -21,7 +21,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Scaffold
@@ -32,9 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -55,9 +58,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.ConstraintSet
+import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -80,7 +89,10 @@ class MainActivity2 : ComponentActivity() {
             //cardComposable()
             //StylingText()
             //StateComponent()
-            FieldButtonSnackbar()
+//            FieldButtonSnackbar()
+//            ListComponents()
+//            ConstraintLayoutComponent()
+            EffectHandlers()    // Just theory
         }
     }
 }
@@ -356,6 +368,183 @@ fun FieldButtonSnackbar(){
             ) {
                 Text(text = "Click me please")
             }
+        }
+    }
+}
+
+@Composable
+fun ListComponents () {
+    val scrollState = rememberScrollState()
+    // This scrollable list load all the items at once
+    /*Column (
+        modifier = Modifier
+            .verticalScroll(state = scrollState)
+    ) {
+        for (i in 1..50) {
+            Text(
+                text = "Item $i",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+
+            )
+        }
+    }*/
+    // This scrollable list load only the items on the screen and close ones
+    /*LazyColumn {
+        items (count = 500) {
+            // Every single item
+            Text(
+                text = "Item $it",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+
+            )
+        }
+
+    }*/
+    LazyColumn {
+        // We can pass a list to be the items
+        itemsIndexed (
+            listOf("One", "dunno", "I think", "hello for everyone that is watching this long text")
+        ) {index, value ->
+            // Every single item
+            Text(
+                text = "Item ${index}: $value",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ConstraintLayoutComponent () {
+    val constraints = ConstraintSet {
+        val greenBox = createRefFor("greenBox")
+        val redBox = createRefFor("redBox")
+        val guideline = createGuidelineFromTop(0.5f) // horizontal invisible guideline in the middle ( 50% )
+
+        constrain(greenBox) {
+            top.linkTo(parent.top)
+            start.linkTo(parent.start)
+            width = Dimension.value(100.dp)
+            height = Dimension.value(100.dp)
+
+        }
+        constrain(redBox){
+            top.linkTo(parent.top)
+            start.linkTo(greenBox.end)
+            bottom.linkTo(guideline)
+            width = Dimension.value(100.dp)
+            height = Dimension.value(100.dp)
+        }
+    }
+    ConstraintLayout(constraints, modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .background(Color.Green)
+                .layoutId(layoutId = "greenBox")
+        )
+        Box(
+            modifier = Modifier
+                .background(Color.Red)
+                .layoutId(layoutId = "redBox")
+        )
+    }
+}
+
+@Composable
+fun EffectHandlers() {
+    var text by remember {
+        mutableStateOf("")
+    }
+
+    // If the value of 'text' changes before this coroutine has ended,
+    // this coroutine will cancel and start again with the new value
+    // If you pass 'true' to 'key1' then it will be executed only once
+    LaunchedEffect(key1 = text) {
+        delay(1000)
+        println("The text is $text")
+    }
+
+    // This scope has to used only in callbacks and 'launch effects'
+    val scope = rememberCoroutineScope()
+    Button(onClick = {
+        scope.launch {
+            delay(1000)
+            println("Hello guys")
+        }
+    }) {
+
+    }
+
+    // This launchEffect is executed only once
+    // If for some reason 'onTimeout' changes its value while 'LaunchedEffect' has been executed (in the delay let's say)
+    // then 'LaunchEffect' will continue executing using the new value of 'onTimeout'
+    var onTimeout: () -> Unit = {}   // consider this value as a parameter
+    val updatedOnTimeout by rememberUpdatedState(newValue = onTimeout)
+    LaunchedEffect(key1 = true) {
+        delay(3000)
+        updatedOnTimeout()
+    }
+
+    // When we need to do some cleaning after a callback we would use the 'DisposableEffect'
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if(event == Lifecycle.Event.ON_PAUSE) {
+                println("On pause called")
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+           lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // The 'SideEffect' is executed when the composable (where this function is)
+    // is recomposed correctly
+    SideEffect {
+        println("This composable has been recomposed successfully")
+    }
+
+    // A composable that saves its state, it could be done with flows too (but it is more complex)
+    @Composable
+    fun produceStateDemo(countUpTo: Int): State<Int> {
+        return produceState(initialValue = 0) {
+            while (value < countUpTo) {
+                delay(1000)
+                value++
+            }
+        }
+    }
+
+    // In a normal situation when 'onClick' is triggered then the string of 'counterText' is
+    // recalculated and then printed
+    // With 'derivedStateOf' we cancel that, so when the 'counter2' increases its value, the
+    // text that it will show will be with the old value
+    @Composable
+    fun DerivedStateOfDemo() {
+        var counter2 by remember {
+            mutableStateOf(0)
+        }
+        val counterText by derivedStateOf {
+            "The counter is $counter2"
+        }
+        Button(onClick = { counter2++ }) {
+            Text(text = counterText)
         }
     }
 }

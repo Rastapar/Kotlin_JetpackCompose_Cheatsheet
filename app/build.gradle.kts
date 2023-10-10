@@ -65,6 +65,7 @@ dependencies {
     implementation("androidx.compose.material:material-android:1.5.2")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("app.cash.turbine:turbine:0.7.0")
