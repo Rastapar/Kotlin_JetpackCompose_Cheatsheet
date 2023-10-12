@@ -46,8 +46,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
+import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Snackbar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +61,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -68,7 +73,9 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
@@ -124,11 +131,11 @@ class MainActivity2 : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            //rowColumnsAlignment()
-            //modifiers()
-            //cardComposable()
-            //StylingText()
-            //StateComponent()
+//            rowColumnsAlignment()
+//            modifiers()
+//            cardComposable()
+//            StylingText()
+//            StateComponent()
 //            FieldButtonSnackbar()
 //            ListComponents()
 //            ConstraintLayoutComponent()
@@ -136,7 +143,9 @@ class MainActivity2 : ComponentActivity() {
 //            SimpleAnimations()
 //            CircularProgressBar()
 //            DraggableMusicKnob()
-            RoundTimer()
+//            RoundTimer()
+//            AnimatedDropDown()
+            BasicNavigation()
         }
     }
 }
@@ -982,4 +991,101 @@ fun RoundTimerComponent (
             )
         }
     }
+}
+
+
+@Composable
+fun AnimatedDropDown() {
+    Surface (
+        color = Color(0xFF101010),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        AnimatedDropDownComponent(
+            text = "My Animated DropDown",
+            modifier = Modifier.padding(15.dp),
+            initiallyOpened = false
+        ) {
+            Text(
+                text = "This text has been revealed",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(Color.Green)
+            )
+        }
+    }
+}
+
+@Composable
+fun AnimatedDropDownComponent(
+    text: String,
+    modifier: Modifier,
+    initiallyOpened: Boolean,
+    content: @Composable () -> Unit
+) {
+    var isOpen by remember {
+        mutableStateOf(initiallyOpened)
+    }
+    val alpha = animateFloatAsState(
+        targetValue = if(isOpen) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 300
+        ),
+        label = ""
+    )
+    val rotateX = animateFloatAsState(
+        targetValue = if(isOpen) 0f else -90f,
+        animationSpec = tween(
+            durationMillis = 300
+        ),
+        label = ""
+    )
+    Column (
+        modifier = modifier
+            .fillMaxWidth()
+    ){
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = text,
+                color = Color.White,
+                fontSize = 16.sp
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Open or close the drop down",
+                tint = Color.White,
+                modifier = Modifier
+                    .clickable {
+                        isOpen = !isOpen
+                    }
+                    .scale(1f, if (isOpen) -1f else 1f)
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Box (
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(0.5f, 0f)
+                    rotationX = rotateX.value
+                }
+                .alpha(alpha.value)
+        ) {
+            content()
+        }
+    }
+}
+
+
+@Composable
+fun BasicNavigation() {
+    // This navigation used mandatory argument
+    // So if no argument is passed from the Text Field, the app crashes
+    Navigation()
 }
