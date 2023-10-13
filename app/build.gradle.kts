@@ -67,6 +67,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
     implementation("androidx.navigation:navigation-compose:2.7.4")
+    implementation("com.google.accompanist:accompanist-permissions:0.27.0")     // For easy permissions handling
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("app.cash.turbine:turbine:0.7.0")

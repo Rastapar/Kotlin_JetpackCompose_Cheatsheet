@@ -1,11 +1,15 @@
 package com.example.jetpackcompose
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.animation.OvershootInterpolator
+import android.window.SplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -38,11 +42,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Badge
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
@@ -51,14 +59,22 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Snackbar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -106,8 +122,15 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.google.accompanist.permissions.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -116,6 +139,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
+import kotlin.reflect.KProperty
 
 /*
     The Flows are all about being notified about changes in your code and sending them through a
@@ -145,7 +169,11 @@ class MainActivity2 : ComponentActivity() {
 //            DraggableMusicKnob()
 //            RoundTimer()
 //            AnimatedDropDown()
-            BasicNavigation()
+//            BasicNavigation()
+//            AnimatedSplashScreen()
+//            BottomNavigationChapter()
+//            MultiSelectList()
+
         }
     }
 }
@@ -1089,3 +1117,289 @@ fun BasicNavigation() {
     // So if no argument is passed from the Text Field, the app crashes
     Navigation()
 }
+
+
+@Composable
+fun AnimatedSplashScreen() {
+    Surface(
+        color = Color(0xFF202020),
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+
+        val navController = rememberNavController()
+        NavHost(
+            navController = navController,
+            startDestination = "splash_screen"
+        ) {
+            composable("splash_screen") {
+                SplashScreenComponent(navController = navController)
+            }
+            composable("main_screen") {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "Hello, welcome to the Main Screen", color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SplashScreenComponent(navController: NavController) {
+    val scale = remember {
+        Animatable(0f)  // Starting size of the Image
+    }
+    LaunchedEffect(
+        key1 = true
+    ) {
+        scale.animateTo(
+            targetValue = 1f,   // Final size of the Image
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = {
+                    OvershootInterpolator(2f).getInterpolation(it)
+                }
+            )
+        )
+        delay(3000)
+        navController.navigate("main_screen")
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.github_mark_white),
+            contentDescription = "Logo of Github",
+            modifier = Modifier.scale(scale.value)
+        )
+    }
+}
+
+
+@Composable
+fun BottomNavigationChapter() {
+    val navController = rememberNavController()
+    // Scaffold it is a layout that reserves specific spaces for specific tools
+    // In this case it will set the Navigation Bar at the bottom of the screen
+    Scaffold (
+        bottomBar = {
+            BottomNavigationBar(
+                items = listOf(
+                    BottomNavItem(
+                        name = "Home",
+                        route = "homescreen",
+                        icon = Icons.Default.Home
+                    ),
+                    BottomNavItem(
+                        name = "Chat",
+                        route = "chatscreen",
+                        icon = Icons.Default.Notifications
+                    ),
+                    BottomNavItem(
+                        name = "Settings",
+                        route = "settingscreen",
+                        icon = Icons.Default.Settings,
+                        badgeCount = 13
+                    ),
+                ),
+                navController = navController,
+                onItemClick = {
+                    navController.navigate(it.route)
+                }
+            )
+        }
+    ) {paddingValues ->
+        Spacer(modifier = Modifier.padding(paddingValues))  // I use this just to avoid the error
+        BottomNavigationComponent(navController = navController)
+    }
+}
+
+@Composable
+fun BottomNavigationComponent(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "homescreen"
+    ) {
+        composable ("homescreen") {
+            HomeScreen()
+        }
+        composable ("chatscreen") {
+            ChatScreen()
+        }
+        composable ("settingscreen") {
+            SettingScreen()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BottomNavigationBar(
+    items: List<BottomNavItem>,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    onItemClick: (BottomNavItem) -> Unit
+) {
+    val backStackEntry = navController.currentBackStackEntryAsState()
+    BottomNavigation(
+        modifier = modifier,
+        backgroundColor = Color.DarkGray,
+        elevation = 5.dp
+    ) {
+        items.forEach { item ->
+            val selected = item.route == backStackEntry.value?.destination?.route
+            BottomNavigationItem(
+                selected = selected,
+                onClick = {
+                    onItemClick(item)
+                },
+                selectedContentColor = Color.Green,
+                unselectedContentColor = Color.Gray,
+                icon = {
+                    Column (
+                        horizontalAlignment = CenterHorizontally
+                    ) {
+                        if(item.badgeCount > 0) {
+                            BadgedBox (
+                                badge = {
+                                    Box(
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .background(Color.Yellow)
+                                    ) {
+                                        Text(
+                                            text = item.badgeCount.toString(),
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.name
+                                    )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.name
+                            )
+                        }
+                        if(selected) {
+                            Text (
+                                text = item.name,
+                                textAlign = TextAlign.Center,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun HomeScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "Home Screen here")
+    }
+}
+
+@Composable
+fun ChatScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "Chat Screen here")
+    }
+}
+
+@Composable
+fun SettingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "Settings Screen here")
+    }
+}
+
+
+@Composable
+fun MultiSelectList() {
+    var items by remember {
+        mutableStateOf(
+            (1..20).map {
+                ListItem(
+                    title = "Item $it",
+                    isSelected = false
+                )
+            }
+        )
+    }
+    // This column will load only the visible items on screen
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        items(items.size) {itemIndex ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        items = items.mapIndexed { clickIndex, item ->
+                            if (clickIndex == itemIndex) {
+                                item.copy(isSelected = !item.isSelected)
+                            } else {
+                                item
+                            }
+                        }
+                    }
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = items[itemIndex].title
+                )
+                if(items[itemIndex].isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "if selected item",
+                        tint = Color.Green,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun CleanTheming () {
+    Surface (
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier
+            .padding(
+                LocalSpacing.current.large
+            )
+            .padding(
+                spacing.large
+            )
+    ) {
+        LocalSpacing.current.medium
+    }
+}
+
+
+
