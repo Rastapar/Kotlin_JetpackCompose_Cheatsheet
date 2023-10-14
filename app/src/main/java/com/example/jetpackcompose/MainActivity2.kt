@@ -2,12 +2,14 @@ package com.example.jetpackcompose
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.animation.OvershootInterpolator
 import android.window.SplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -124,15 +126,20 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.google.accompanist.permissions.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -173,7 +180,9 @@ class MainActivity2 : ComponentActivity() {
 //            AnimatedSplashScreen()
 //            BottomNavigationChapter()
 //            MultiSelectList()
-
+//            CleanTheming()
+//            EasierNavigation()
+            SupportAllScreens()
         }
     }
 }
@@ -1402,4 +1411,188 @@ fun CleanTheming () {
 }
 
 
+// This is actually the old navigation style
+// For "easier" navigation watch: https://youtu.be/Q3iZyW2etm4?si=lhw3iYzimuzjvpwR
+@Composable
+fun EasierNavigation() {
+    val navController = rememberNavController()
+    NavHost(
+        navController = navController,
+        startDestination = "login"
+    ) {
+        composable("login") {
+            LoginScreen(navController)
+        }
+        composable(
+            route = "profile/¨{name}/{userId}/{timestamp}",
+            arguments = listOf(
+                navArgument("name") {
+                    type = NavType.StringType
+                },
+                navArgument("userId") {
+                    type = NavType.StringType
+                },
+                navArgument("timestamp") {
+                    type = NavType.LongType
+                }
+            )
+        ) {
+            val name = it.arguments?.getString("name")!!
+            val userId = it.arguments?.getString("userId")!!
+            val timestamp = it.arguments?.getLong("timestamp")!!
 
+            ProfileScreen(
+                navController = navController,
+                name = name,
+                userId = userId,
+                created = timestamp
+            )
+        }
+        composable(
+            route = "post/{showOnlyPostsByUser}",
+            arguments = listOf(
+                navArgument("showOnlyPostsByUser") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) {
+            val showOnlyPostsByUser = it.arguments?.getBoolean("showOnlyPostsByUser") ?: false
+            PostScreen(showOnlyPostsByUser)
+        }
+    }
+}
+
+@Composable
+fun LoginScreen(
+    navController: NavController
+) {
+    Column (
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Login Screen")
+        Button(
+            onClick = {
+                navController.navigate("profile/roman/myUsername/2323")
+            }
+        ) {
+            Text("Go to the Profile Screen")
+        }
+    }
+}
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ProfileScreen(
+    navController: NavController,
+    name: String,
+    userId: String,
+    created: Long
+) {
+    val user = remember {
+        User2(
+            name = name,
+            id = userId,
+            created = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(created), ZoneId.systemDefault()
+            )
+        )
+    }
+    Column (
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Profile Screen $user", textAlign = TextAlign.Center)
+        Button(
+            onClick = {
+                navController.navigate("post/true")
+            }
+        ) {
+            Text("Go to Post Screen")
+        }
+    }
+}
+@Composable
+fun PostScreen(
+    showOnlyPostsByUser: Boolean = false
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Post Screen, $showOnlyPostsByUser")
+    }
+}
+
+
+
+@Composable
+fun SupportAllScreens() {
+    val windowInfo = rememberWindowInfo()
+    if(windowInfo.screenWidthInfo is WindowInfo.WindowType.Compact) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // List 1
+            items(10) {
+                Text(
+                    text = "Item $it",
+                    fontSize = 25.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Cyan)
+                        .padding(16.dp)
+                )
+            }
+            // List 2
+            items(10) {
+                Text(
+                    text = "Item $it",
+                    fontSize = 25.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Green)
+                        .padding(16.dp)
+                )
+            }
+        }
+    }
+    else {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
+                // List 1
+                items(10) {
+                    Text(
+                        text = "Item $it",
+                        fontSize = 25.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Cyan)
+                            .padding(16.dp)
+                    )
+                }
+            }
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
+                // List 2
+                items(10) {
+                    Text(
+                        text = "Item $it",
+                        fontSize = 25.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Green)
+                            .padding(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
