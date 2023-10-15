@@ -54,9 +54,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Badge
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.BottomSheetScaffold
+import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Slider
@@ -65,8 +68,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.rememberBottomSheetScaffoldState
+import androidx.compose.material.rememberBottomSheetState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -193,7 +199,9 @@ class MainActivity2 : ComponentActivity() {
 //            EasierNavigation()
 //            SupportAllScreens()
 //            AnimationMotionLayout()
-            PaginationCompose()
+//            PaginationCompose()
+//            BottomSheet()
+            NavigationDrawer()
         }
     }
 }
@@ -1716,3 +1724,125 @@ fun PaginationCompose() {
         }
     }
 }
+
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun BottomSheet() {
+    val bottomSheetState = rememberBottomSheetState(    // How much does the sheet shows
+        initialValue = BottomSheetValue.Collapsed,
+        animationSpec = spring(
+            dampingRatio = Spring.StiffnessHigh
+        )
+    )
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = bottomSheetState,
+    )
+    val scope = rememberCoroutineScope()
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetContent = {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Hidden text inside the bottom sheet",
+                    fontSize = 60.sp
+                )
+            }
+        },
+        sheetBackgroundColor = Color.Green,
+        sheetPeekHeight = 0.dp  // How much the bottom sheet show yourself at the beginning
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(
+                onClick = {
+                    scope.launch {
+                        if(bottomSheetState.isCollapsed) {
+                            bottomSheetState.expand()   // expand the bottom sheet
+                        }
+                        else {
+                            bottomSheetState.collapse() // hide the bottom sheet
+                        }
+                    }
+
+                }
+            ) {
+                Text(
+                    text= "Toggle the bottom sheet, progress: ${bottomSheetState.progress}",
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun NavigationDrawer () {
+    val scaffoldState = rememberScaffoldState()
+    val scope = rememberCoroutineScope()
+    Scaffold (
+        scaffoldState = scaffoldState,
+        topBar = {
+             AppBar(
+                 onNavigationIconClick = {
+                     scope.launch {
+                        if (scaffoldState.drawerState.isClosed) {
+                            scaffoldState.drawerState.open()
+                        }
+                        else {
+                            scaffoldState.drawerState.close()
+                        }
+                     }
+                 }
+             )
+        },
+        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,   // only if the drawer is opened, we can drag it back
+        drawerContent = {
+            DrawerHeader()
+            DrawerBody(
+                items = listOf(
+                    DrawerMenuItem(
+                        id = "home",
+                        title = "Home",
+                        contentDescription = "Go to home screen",
+                        icon = Icons.Default.Home
+                    ),
+                    DrawerMenuItem(
+                        id = "settings",
+                        title = "Settings",
+                        contentDescription = "Go to settings screen",
+                        icon = Icons.Default.Settings
+                    ),
+                    DrawerMenuItem(
+                        id = "help",
+                        title = "Help",
+                        contentDescription = "Go to help screen",
+                        icon = Icons.Default.Info
+                    ),
+                ),
+                onItemClick = {
+                    println("Clicked on ${it.title}")
+                    // We would actually add navigation here like:
+                    /*
+                        when(it.id) {
+                            "settings" -> navigateToSettingsScreen()
+                        }
+                    */
+                }
+            )
+        }
+    ) {
+
+    }
+}
+
+
+
