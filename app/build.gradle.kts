@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.myapplication"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
@@ -65,7 +65,7 @@ dependencies {
     implementation("androidx.compose.material:material-android:1.5.2")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.0")
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation("com.google.accompanist:accompanist-permissions:0.27.0")     // For easy permissions handling
 

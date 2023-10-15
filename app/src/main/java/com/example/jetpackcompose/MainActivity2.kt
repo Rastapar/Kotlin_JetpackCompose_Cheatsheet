@@ -48,6 +48,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Badge
@@ -58,6 +59,7 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Slider
 import androidx.compose.material.Snackbar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -67,6 +69,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -74,12 +77,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
@@ -101,6 +106,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -121,6 +127,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
+import androidx.constraintlayout.compose.ExperimentalMotionApi
+import androidx.constraintlayout.compose.MotionLayout
+import androidx.constraintlayout.compose.MotionScene
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -182,7 +191,9 @@ class MainActivity2 : ComponentActivity() {
 //            MultiSelectList()
 //            CleanTheming()
 //            EasierNavigation()
-            SupportAllScreens()
+//            SupportAllScreens()
+//            AnimationMotionLayout()
+            PaginationCompose()
         }
     }
 }
@@ -1591,6 +1602,115 @@ fun SupportAllScreens() {
                             .background(Color.Green)
                             .padding(16.dp)
                     )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AnimationMotionLayout () {
+    Column {
+        var progress by remember {
+            mutableFloatStateOf(0f)
+        }
+        AnimatedProfileComponent(progress = progress)
+        Spacer(modifier = Modifier.height(32.dp))
+        Slider(
+            value = progress,
+            onValueChange = {
+                progress = it
+            },
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalMotionApi::class)
+@Composable
+fun AnimatedProfileComponent(progress: Float) {
+    val context = LocalContext.current
+    val motionScene = remember {
+        context.resources
+            .openRawResource(R.raw.motion_scene)
+            .readBytes()
+            .decodeToString()
+    }
+    MotionLayout(
+        motionScene = MotionScene(content = motionScene),
+        progress = progress,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        val properties = motionProperties(id = "profile_pic")
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.DarkGray)
+                .layoutId("box")
+        )
+        Image(
+            painter = painterResource(id = R.drawable.myflower),
+            contentDescription = null,
+            modifier = Modifier
+                .clip(CircleShape)
+                .border(
+                    width = 2.dp,
+                    color = properties.value.color("background"),
+                    shape = CircleShape
+                )
+                .layoutId("profile_pic")
+        )
+        Text(
+            text = "I am a Github Master",
+            fontSize = 24.sp,
+            modifier = Modifier.layoutId("username"),
+            color = properties.value.color("background"),
+        )
+    }
+}
+
+
+@Composable
+fun PaginationCompose() {
+    // In case we change the orientation of the screen, the loaded items will be saved
+    // because they are saved in the viewModel
+    val viewModel = viewModel<MainViewModelPagination>()
+    val state = viewModel.state
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        items(count = state.items.size) { index ->
+            // Composable of each item
+            val item = state.items[index]
+            //Check if we are at the end of the list to load more items
+            if(index >= state.items.size - 1 && !state.endReached && !state.isLoading) {
+                viewModel.loadNextItems()
+            }
+            Column (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = item.title,
+                    fontSize = 20.sp,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(item.description)
+            }
+        }
+        item {
+            // In the case we are loading items, we will display the loading icon
+            if(state.isLoading) {
+                Row (
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }
