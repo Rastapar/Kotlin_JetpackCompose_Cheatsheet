@@ -1,26 +1,21 @@
 package com.example.jetpackcompose
 
-import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.animation.OvershootInterpolator
-import android.window.SplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -35,6 +30,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,12 +42,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Badge
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.BottomSheetScaffold
@@ -98,8 +95,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
@@ -147,8 +142,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.myapplication.R
-import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.google.accompanist.permissions.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -161,7 +156,6 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
-import kotlin.reflect.KProperty
 
 /*
     The Flows are all about being notified about changes in your code and sending them through a
@@ -201,7 +195,9 @@ class MainActivity2 : ComponentActivity() {
 //            AnimationMotionLayout()
 //            PaginationCompose()
 //            BottomSheet()
-            NavigationDrawer()
+//            NavigationDrawer()
+//            LazyGrid()
+            DeeplinkingGuide()
         }
     }
 }
@@ -1788,6 +1784,8 @@ fun BottomSheet() {
 fun NavigationDrawer () {
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
+    // Scaffold is like a prepared structure that automatically positions some Composables like
+    // the Top Bar, Menu Drawer, and other default Composables
     Scaffold (
         scaffoldState = scaffoldState,
         topBar = {
@@ -1840,9 +1838,97 @@ fun NavigationDrawer () {
             )
         }
     ) {
-
+        Text(text = "Some random text: ${it.toString()}", fontSize = 32.sp)
     }
 }
 
 
+// In the end it is just a lazy column that has been modified
+@Composable
+fun LazyGrid() {
+    // When the screen is loaded, it will be scrolled automatically until the item 80 can be seen at the beginning
+    val state = rememberLazyGridState(
+        initialFirstVisibleItemIndex = 80
+    )
+    // With this animation, the screen will be dragged automatically from the item 80 on the top until the item 50 on the top
+    LaunchedEffect(key1 = true) {
+        state.animateScrollToItem(50)
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(100.dp),   // Adaptive means that the amount of cells per row will adjust to the screen
+        state = state,
+        content = {
+            items(count = 100) { index ->
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color.Green),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "Item $index")
+                }
+            }
+        }
+    )
+}
 
+
+// When the user opens some link or file, he could do that will our app (Deeplinking)
+// To test the link that opens the app from a browser, we go to: Tools -> App Links Assistant
+// To allow opening the app from the browser, firstly it has to be allowed in settings in the user phone
+// The app of 'MainActivity3' was created just to open the Deeplink reditected to this app
+@Composable
+fun DeeplinkingGuide() {
+    val navController = rememberNavController()
+    NavHost(
+        navController = navController,
+        startDestination = "homedl"
+    ) {
+        composable(route = "homedl") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        navController.navigate("detaildl")
+                    }
+                ) {
+                    Text(
+                        text = "To detail",
+                        color = Color.White
+                    )
+                }
+            }
+        }
+        composable(
+            route = "detaildl",
+            deepLinks = listOf(
+                // If the user tries to open that link, this app should be able to manage it
+                // This link was added in the Manifest too
+                navDeepLink {
+                    uriPattern = "https://somelinkdl.com/{id}"
+                    action = Intent.ACTION_VIEW
+                }
+            ),
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) {entry ->
+            val id = entry.arguments?.getInt("id")
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "The id is $id"
+                )
+            }
+        }
+    }
+}
