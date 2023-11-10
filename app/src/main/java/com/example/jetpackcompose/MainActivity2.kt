@@ -9,6 +9,8 @@ import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
@@ -19,6 +21,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -197,7 +203,9 @@ class MainActivity2 : ComponentActivity() {
 //            BottomSheet()
 //            NavigationDrawer()
 //            LazyGrid()
-            DeeplinkingGuide()
+//            DeeplinkingGuide()
+//            PerformanceOptimizations()
+            AnimatedCounterText()
         }
     }
 }
@@ -1927,6 +1935,92 @@ fun DeeplinkingGuide() {
             ) {
                 Text(
                     text = "The id is $id"
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun PerformanceOptimizations() {
+    // We can check the composables updates in real life in the Layout Inspector (bottom right corner)
+
+    // If a composable it is marked as unstable then it could recompose even whe it is not used or triggered
+    // For that use remember variables of lambda functions (in this case)
+
+    // When an object (only objects or complex types) of other Module (like a library) is passed as a parameter for a Composable,
+    // then that parameter is marked as unstable.
+    // The solution would be create a local class copying the data of that class and extend
+    // functions that convert it to local class and to external class
+
+    // In case we create some Custom Grid then we would need to create a key for each cell
+    // This will make so in case the data is updated, only the data inside the cells change and not
+    // the whole composable of the cell
+    /*
+        key (variableThatChanges) {
+        {
+    */
+}
+
+
+@Composable
+fun AnimatedCounterText() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        var count by remember {
+            mutableIntStateOf(0)
+        }
+        AnimatedCounter(count = count)
+        Button(
+            onClick = { count++ }
+        ) {
+            Text(
+                text = "Increment"
+            )
+        }
+    }
+}
+
+@Composable
+fun AnimatedCounter(
+    count: Int,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium
+) {
+    var oldCount by remember {
+        mutableIntStateOf(count)
+    }
+    SideEffect {
+        oldCount = count
+    }
+    Row(modifier = modifier) {
+        val countString = count.toString()
+        val oldcountString = oldCount.toString()
+
+        for(i in countString.indices) {
+            val oldChar = oldcountString.getOrNull(i)
+            val newChar = countString[i]
+            val char = if(oldChar == newChar) {
+                oldcountString[i]
+            }
+            else {
+                countString[i]
+            }
+            AnimatedContent(
+                targetState = char, // When this value changes, the animation is triggered
+                transitionSpec = {
+                    slideInVertically { it } togetherWith slideOutVertically { -it }
+                },
+                label = ""
+            ) {char ->
+                Text(
+                    text = char.toString(),
+                    style = style,
+                    softWrap = false
                 )
             }
         }
