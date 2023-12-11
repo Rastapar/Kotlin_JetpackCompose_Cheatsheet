@@ -188,7 +188,7 @@ class MainActivity2 : ComponentActivity() {
 //            EffectHandlers()    // Just theory
 //            SimpleAnimations()
 //            CircularProgressBar()
-//            DraggableMusicKnob()
+            DraggableMusicKnob()
 //            RoundTimer()
 //            AnimatedDropDown()
 //            BasicNavigation()
@@ -205,7 +205,7 @@ class MainActivity2 : ComponentActivity() {
 //            LazyGrid()
 //            DeeplinkingGuide()
 //            PerformanceOptimizations()
-            AnimatedCounterText()
+//            AnimatedCounterText()
         }
     }
 }
@@ -861,7 +861,7 @@ fun DraggableMusicKnobComponent(
         modifier = modifier
             .fillMaxSize()
             .onGloballyPositioned {
-                val windowBounds = it.boundsInWindow()
+                val windowBounds = it.boundsI nWindow()
                 centerX = windowBounds.size.width / 2f
                 centerY = windowBounds.size.height / 2f
 
